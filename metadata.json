@@ -1,0 +1,5 @@
+{
+  "name": "APP ANALYST ADS",
+  "description": "A personal dashboard to track Google Sheets campaign data, cache product knowledge, and analyze metrics using Gemini AI.",
+  "requestFramePermissions": []
+}
