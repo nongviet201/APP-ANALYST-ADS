@@ -46,24 +46,61 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
 
     // Helper to find name intelligently around the expected location
     const findName = (r: number, c: number) => {
-        // Define header keywords to ignore
-        const ignoredValues = ['danh mục', 'giá bán', 'phần trăm', 'thành tiền', 'giá nhập', 'chi phí ads', 'tỷ lệ hoàn', 'chi phí khác', 'ship', 'lợi nhuận'];
+        // Standard headers to ignore (Lowercased)
+        const ignoredValues = [
+            'danh mục', 'giá bán', 'phần trăm', 'phần trăm %', 'thành tiền', 
+            'giá nhập', 'chi phí ads', 'tỷ lệ hoàn', 'chi phí khác', 'ship', 'lợi nhuận',
+            'sản phẩm', 'product', 'item'
+        ];
         
-        // Scan wider range: 2 to 5 rows above, and 1 column left/right
-        // Prioritize: [r-2, c], then neighbors, then [r-3, c], etc.
-        const rowOffsets = [-2, -3, -4, -5];
-        const colOffsets = [0, -1, 1]; 
+        // Strategy: Scan upwards from the anchor "Giá bán"
+        // We look at row offsets -2, -3, -4 (most likely locations)
+        // We also check lateral columns (left/right) because merged cells might anchor differently
+        
+        // Priority order:
+        // 1. [r-2, c]   (Standard)
+        // 2. [r-2, c-1] (Merged Left)
+        // 3. [r-2, c+1] (Merged Right)
+        // 4. [r-3, c]   (Header shift)
+        // 5. [r-3, c-1]
+        // 6. [r-3, c+1]
+        // 7. [r-4, ...], [r-5, ...]
+        
+        const scanPatterns = [
+            {r: -2, c: 0}, {r: -2, c: -1}, {r: -2, c: 1}, {r: -2, c: -2},
+            {r: -3, c: 0}, {r: -3, c: -1}, {r: -3, c: 1},
+            {r: -4, c: 0}, {r: -4, c: -1}, {r: -4, c: 1},
+            {r: -5, c: 0},
+            {r: -1, c: 0} // Last resort: maybe it's right above?
+        ];
 
-        for (const rOff of rowOffsets) {
-            for (const cOff of colOffsets) {
-                const val = getCell(r + rOff, c + cOff)?.toString().trim();
-                
-                if (val && val.length > 1) {
-                    const lowerVal = val.toLowerCase();
-                    // If it's not a header keyword, it's likely the name
-                    if (!ignoredValues.includes(lowerVal)) {
-                        return val;
-                    }
+        for (const pattern of scanPatterns) {
+            const checkR = r + pattern.r;
+            const checkC = c + pattern.c;
+            
+            const cellVal = getCell(checkR, checkC);
+            if (cellVal) {
+                const strVal = cellVal.toString().trim();
+                if (strVal.length > 0) {
+                     const lowerVal = strVal.toLowerCase();
+                     
+                     // Check if it's a number (prices usually aren't names)
+                     const isNumber = !isNaN(parseFloat(strVal.replace(/,/g, '').replace(/\./g, ''))) && isFinite(Number(strVal.replace(/,/g, '').replace(/\./g, '')));
+                     
+                     // Heuristic: Names are usually not just numbers, and not in ignored list
+                     if (!ignoredValues.includes(lowerVal) && !strVal.includes('%')) {
+                         // If it's a pure number, be skeptical, but if it's the only thing we found...
+                         // Let's filter out pure small numbers which might be noise
+                         if (isNumber && strVal.length < 3) continue; 
+                         
+                         // FIX: Clean up "Danh mục" from the name if it exists inside the cell
+                         // This handles cases like "KẸO TRỨNG MUỐI Danh mục"
+                         const cleanName = strVal.replace(/danh mục/gi, "").trim();
+
+                         if (cleanName.length === 0) continue;
+
+                         return cleanName;
+                     }
                 }
             }
         }
@@ -111,10 +148,8 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
         }
 
         if (validCache && tempProducts.length > 0) {
-            console.log("⚡ Used cached product locations.");
             return tempProducts;
         } else {
-            console.log("⚠️ Cache invalid or structure changed. Rescanning...");
             needsRescan = true;
         }
     } else {
@@ -144,7 +179,6 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
         if (newLocations.length > 0) {
             const currentMem = getMemory();
             if (JSON.stringify(currentMem.productBlockLocations) !== JSON.stringify(newLocations)) {
-                console.log("💾 Updating product location cache:", newLocations.length, "blocks found.");
                 saveMemory({
                     ...currentMem,
                     productBlockLocations: newLocations
