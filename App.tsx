@@ -5,7 +5,9 @@ import { getMemory, saveMemory, updateSheetConfig, extractSheetId } from './serv
 import { fetchSheetData, parseTableData } from './services/googleSheetService';
 import { analyzeData } from './services/geminiService';
 import { POLLING_INTERVAL_MS, DEFAULT_SHEET_URL } from './constants';
-import { DataTable } from './components/DataTable';
+// Import specific tables
+import { AdsTable } from './components/AdsTable';
+import { HourlyTable } from './components/HourlyTable';
 import { ProductKnowledge } from './components/ProductKnowledge';
 import { Button } from './components/Button';
 import { Layout } from './components/Layout';
@@ -340,7 +342,7 @@ const App: React.FC = () => {
         {/* The Main Unified Table with Integrated Controls */}
         <div className="flex-1 min-h-[400px]">
           {activeTab === TabView.HOURLY && (
-            <DataTable 
+            <HourlyTable 
               title="Báo Cáo Giờ" 
               data={hourlyData} 
               isUpdating={isUpdating}
@@ -353,7 +355,7 @@ const App: React.FC = () => {
           )}
           
           {activeTab === TabView.ADS && (
-            <DataTable 
+            <AdsTable 
               title="Việt Ads" 
               data={adsData} 
               isUpdating={isUpdating}
