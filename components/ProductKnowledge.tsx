@@ -25,19 +25,38 @@ type SortConfig = {
 };
 
 export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefresh, lastUpdated }) => {
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  // Fix layout shift: Khởi tạo giá trị ngay lập tức thay vì đợi useEffect
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return 'cards';
+    }
+    return 'table';
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showMetadata, setShowMetadata] = useState(true); 
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: null });
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (window.innerWidth < 1024) setViewMode('cards');
-  }, []);
+    const handleResize = () => {
+      if (window.innerWidth < 1024 && viewMode === 'table') setViewMode('cards');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
+  // Logic delay metadata
   useEffect(() => {
-    if (isSearchExpanded && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (isSearchExpanded) {
+      setShowMetadata(false);
+      if (searchInputRef.current) searchInputRef.current.focus();
+    } else {
+      const timer = setTimeout(() => {
+        setShowMetadata(true);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isSearchExpanded]);
 
@@ -131,15 +150,20 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
         <div className="flex items-center gap-3">
           <div className={`w-2.5 h-2.5 rounded-full ${lastUpdated ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
           <div className="flex flex-col">
-            <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight">Kho Kiến Thức Sản Phẩm</h2>
+            <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight">Sản Phẩm</h2>
+            
+            {/* Metadata section updated */}
             <div className="flex items-center gap-2">
-                 <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">Update: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
-                 <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">{processedProducts.length} SP</span>
+                 <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">
+                    Update: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}
+                 </span>
+                 <span className={`text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold transition-opacity duration-300 ${showMetadata ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                    {processedProducts.length} SP
+                 </span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-            {/* Animated Search Bar for Products */}
             <div className={`flex items-center transition-all duration-300 ${isSearchExpanded ? 'w-40 md:w-64 bg-emerald-50 ring-1 ring-emerald-200' : 'w-10'} rounded-xl overflow-hidden`}>
                 <button 
                 onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -209,18 +233,53 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
           </tbody>
         </table>
         ) : (
-          <div className="p-3 md:p-4 space-y-4 bg-slate-50/50 min-h-full">
+          <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20">
              {processedProducts.map((p, idx) => (
-                <div key={idx} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4">
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-50">
-                        <h3 className="text-sm font-bold text-slate-800">{p.name}</h3>
-                        <span className="text-[10px] font-bold text-slate-300">#{idx + 1}</span>
+                <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full relative">
+                    
+                    {/* Rank Badge */}
+                    <div className="absolute top-2 right-2 z-10 opacity-60">
+                        <span className="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                           #{idx + 1}
+                        </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                        <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Giá nhập</span><span className="text-xs font-semibold text-slate-600">{p.importPrice}</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">CP Lượt mua</span><span className="text-xs font-semibold text-slate-800">{p.adsCost}</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">% Hoàn</span><span className="text-xs font-semibold text-slate-600">{p.returnRate}</span></div>
-                        <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Hòa TT</span><span className="text-xs font-bold text-emerald-600">{p.breakEven}</span></div>
+
+                    {/* Header: Product Name */}
+                    <div className="px-4 pt-4 pb-2 text-center">
+                        <h3 className="text-[13px] font-black uppercase text-slate-800 leading-tight">
+                            {p.name}
+                        </h3>
+                    </div>
+
+                    <div className="mx-8 border-t border-slate-50 mb-2"></div>
+
+                    {/* Metrics Grid */}
+                    <div className="px-3 pb-3 flex-1 flex flex-col justify-end">
+                        <div className="grid grid-cols-2 gap-2">
+                             {/* Giá Nhập */}
+                             <div className="flex flex-col items-center justify-center text-center px-1 py-2.5 rounded-xl border bg-slate-50/60 border-slate-100">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate w-full">Giá Nhập</span>
+                                <span className="text-[13px] font-bold text-slate-700 truncate w-full">{p.importPrice}</span>
+                             </div>
+
+                             {/* CP Lượt Mua */}
+                             <div className="flex flex-col items-center justify-center text-center px-1 py-2.5 rounded-xl border bg-slate-50/60 border-slate-100">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate w-full">CP Lượt Mua</span>
+                                <span className="text-[13px] font-bold text-slate-700 truncate w-full">{p.adsCost}</span>
+                             </div>
+
+                             {/* % Hoàn */}
+                             <div className="flex flex-col items-center justify-center text-center px-1 py-2.5 rounded-xl border bg-slate-50/60 border-slate-100">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 truncate w-full">% Hoàn</span>
+                                <span className="text-[13px] font-bold text-slate-700 truncate w-full">{p.returnRate}</span>
+                             </div>
+
+                             {/* Hòa TT (Highlighted) */}
+                             <div className="flex flex-col items-center justify-center text-center px-1 py-2.5 rounded-xl border bg-emerald-50 border-emerald-100">
+                                <span className="text-[9px] font-bold text-emerald-700/70 uppercase tracking-widest mb-1 truncate w-full">Hòa TT</span>
+                                <span className="text-[13px] font-bold text-emerald-600 truncate w-full">{p.breakEven}</span>
+                             </div>
+                        </div>
                     </div>
                 </div>
              ))}

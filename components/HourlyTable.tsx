@@ -38,11 +38,19 @@ const getCellStyle = (key: string, value: any, isFirstColumn: boolean) => {
 export const HourlyTable: React.FC<HourlyTableProps> = ({ 
   data, title, status = 'idle', lastUpdated, onRefresh 
 }) => {
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table'); 
+  // Fix layout shift: Khởi tạo giá trị ngay lập tức thay vì đợi useEffect
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return 'cards';
+    }
+    return 'table';
+  });
+  
   const [isOpen, setIsOpen] = useState(true); 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showMetadata, setShowMetadata] = useState(true); 
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: null });
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -52,8 +60,12 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
   const [scrollLeft, setScrollLeft] = useState(0);
 
   useEffect(() => {
-    if (window.innerWidth < 1024) setViewMode('cards');
-  }, []);
+    const handleResize = () => {
+      if (window.innerWidth < 1024 && viewMode === 'table') setViewMode('cards');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -62,9 +74,16 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
     return () => clearInterval(timer);
   }, [status]);
 
+  // Logic delay metadata
   useEffect(() => {
-    if (isSearchExpanded && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (isSearchExpanded) {
+      setShowMetadata(false);
+      if (searchInputRef.current) searchInputRef.current.focus();
+    } else {
+      const timer = setTimeout(() => {
+        setShowMetadata(true);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isSearchExpanded]);
 
@@ -133,9 +152,15 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
           <div className={`w-2.5 h-2.5 rounded-full ${status === 'error' ? 'bg-rose-500' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}></div>
           <div className="flex flex-col">
             <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">{title}</h2>
+            
+            {/* Metadata section updated: Update time always visible, Badge hidden on search */}
             <div className="flex items-center gap-2">
-                 <span className={`text-[10px] font-semibold tracking-tight ${status === 'error' ? 'text-rose-500' : 'text-slate-400'}`}>Update: {displayTime}</span>
-                 <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold">{processedData.length} MỐC</span>
+                 <span className={`text-[10px] font-semibold tracking-tight ${status === 'error' ? 'text-rose-500' : 'text-slate-400'}`}>
+                    Update: {displayTime}
+                 </span>
+                 <span className={`text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold transition-opacity duration-300 ${showMetadata ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                    {processedData.length} MỐC
+                 </span>
             </div>
           </div>
         </div>
