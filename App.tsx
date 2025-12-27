@@ -92,6 +92,7 @@ const App: React.FC = () => {
 
   // --- Startup & Auto-Update every 30s ---
   useEffect(() => {
+    // Initial fetch for Knowledge if missing
     if (memory.sheetId && !memory.productKnowledgeCache) {
       fetchDataForTab(TabView.KNOWLEDGE);
     }
@@ -100,13 +101,18 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!memory.sheetId) return;
 
-    // Initial fetch for tab
+    // Initial fetch for active tab
     fetchDataForTab(activeTab);
 
     // Set 30s polling
     if (intervalRef.current) clearInterval(intervalRef.current);
+    
     intervalRef.current = setInterval(() => {
-      fetchDataForTab(activeTab);
+      // ONLY POLL if the active tab is NOT Knowledge. 
+      // Knowledge should only update manually or on config change.
+      if (activeTab !== TabView.KNOWLEDGE) {
+        fetchDataForTab(activeTab);
+      }
     }, POLLING_INTERVAL_MS);
 
     return () => {
@@ -169,6 +175,10 @@ const App: React.FC = () => {
       // Reset current data to force a clean fetch
       setHourlyData([]);
       setAdsData([]);
+      // Force refresh knowledge if config changed
+      if (activeTab === TabView.KNOWLEDGE) {
+         fetchDataForTab(TabView.KNOWLEDGE);
+      }
   };
 
   const handleConfigChange = (key: string, field: keyof SheetConfig, value: any) => {

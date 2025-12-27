@@ -13,21 +13,17 @@ interface HourlyTableProps {
   status?: 'syncing' | 'success' | 'idle';
 }
 
-// Logic định dạng số liệu cho Báo Cáo Giờ
 const formatValue = (key: string, value: any) => {
   return value;
 };
 
-// Logic style cho Báo Cáo Giờ (Có thể chỉnh màu khác với Ads)
 const getCellStyle = (key: string, value: any, isFirstColumn: boolean) => {
   const lowerKey = key.toLowerCase();
   
   if (isFirstColumn) {
-    // Cột đầu tiên của Giờ thường là Mốc thời gian, để màu xanh dương đậm
     return 'font-bold text-blue-900 bg-white sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]';
   }
   
-  // Highlight số liệu tài chính
   if ((lowerKey.includes('lợi nhuận') || lowerKey.includes('%') || lowerKey.includes('roi') || lowerKey.includes('chi phí') || lowerKey.includes('doanh thu')) && typeof value === 'string') {
     const num = parseFloat(value.replace(/[^0-9.-]+/g,""));
     if (!isNaN(num)) {
@@ -51,10 +47,8 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
   status = 'idle'
 }) => {
   const [lastSyncTime, setLastSyncTime] = useState<string>(new Date().toLocaleTimeString());
-  // Báo cáo giờ thường ít cột hơn, ưu tiên bảng
-  const [viewMode, setViewMode] = useState<'table'>('table'); 
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table'); 
   
-  // Drag refs
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -62,13 +56,20 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
   const [scrollLeft, setScrollLeft] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
 
+  // Auto-switch to cards on tablet/mobile
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setViewMode('cards');
+    }
+  }, []);
+
   useEffect(() => {
     if (status === 'success') {
       setLastSyncTime(new Date().toLocaleTimeString());
     }
   }, [status]);
 
-  // Drag logic (Copy để giữ trải nghiệm mượt mà)
+  // Drag logic
   const onMouseDown = (e: React.MouseEvent) => {
     if (!tableContainerRef.current) return;
     setIsDragging(true);
@@ -104,12 +105,12 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
   const sheetUpdateTime = updatedKey && data.length > 0 ? data[0][updatedKey] : null;
 
   let ledClass = "bg-slate-300";
-  if (status === 'syncing') ledClass = "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.6)]"; // Blue LED for Hourly
+  if (status === 'syncing') ledClass = "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.6)]";
   if (status === 'success') ledClass = "bg-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.5)]";
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
-      {/* Header Hourly - Màu chủ đạo xanh dương nhẹ khác với Ads */}
+      {/* Header */}
       <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
           <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${ledClass}`}></div>
@@ -125,6 +126,17 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+           <button 
+            onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+            className="hidden md:flex p-2 text-slate-500 hover:bg-slate-50 rounded-xl border border-slate-100 transition-colors"
+          >
+            {viewMode === 'table' ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-16zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-16z" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            )}
+          </button>
+          
           {onRefresh && (
             <button onClick={onRefresh} disabled={status === 'syncing'} className="p-2 text-slate-500 hover:bg-slate-50 hover:text-blue-600 rounded-xl border border-slate-100 transition-colors">
               <svg className={`w-5 h-5 ${status === 'syncing' ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,15 +153,15 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
         </div>
       </div>
 
-      {/* Main Content Area - Table Only for Hourly */}
       <div 
         ref={tableContainerRef}
-        className="flex-1 overflow-auto custom-scrollbar bg-slate-50/50 cursor-grab active:cursor-grabbing"
-        onMouseDown={onMouseDown}
-        onMouseLeave={onMouseLeave}
-        onMouseUp={onMouseUp}
-        onMouseMove={onMouseMove}
+        className={`flex-1 overflow-auto custom-scrollbar ${viewMode === 'table' ? 'bg-slate-50/50 cursor-grab active:cursor-grabbing' : 'bg-slate-50/50'}`}
+        onMouseDown={viewMode === 'table' ? onMouseDown : undefined}
+        onMouseLeave={viewMode === 'table' ? onMouseLeave : undefined}
+        onMouseUp={viewMode === 'table' ? onMouseUp : undefined}
+        onMouseMove={viewMode === 'table' ? onMouseMove : undefined}
       >
+        {viewMode === 'table' ? (
           <table className="w-full text-left border-collapse select-none md:select-auto">
             <thead className="bg-slate-50 sticky top-0 z-30">
               <tr>
@@ -172,9 +184,30 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
               ))}
             </tbody>
           </table>
+        ) : (
+          /* Card View for Hourly */
+          <div className="p-3 md:p-4 space-y-4">
+             {data.map((row, idx) => (
+                <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-4">
+                   <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
+                      <h3 className="text-base font-bold text-blue-900">{row[tableKeys[0]]}</h3>
+                      <span className="text-[10px] font-bold text-slate-300">#{idx + 1}</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      {tableKeys.slice(1).map(key => (
+                         <div key={key} className="flex flex-col">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 truncate">{key}</span>
+                            <span className={`text-sm ${getCellStyle(key, row[key], false)}`}>{row[key]}</span>
+                         </div>
+                      ))}
+                   </div>
+                </div>
+             ))}
+          </div>
+        )}
       </div>
       
-      {/* Footer Simple */}
+      {/* Footer */}
       <div className="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center z-30">
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{data.length} MỐC THỜI GIAN</span>
         <div className="flex items-center gap-2">

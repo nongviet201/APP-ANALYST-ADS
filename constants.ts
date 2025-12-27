@@ -7,23 +7,23 @@ export const INITIAL_CONFIGS = {
     sheetName: 'BC_GIỜ',
     rangeStart: 'A1',
     rangeEndCol: 'J',
-    lastRow: 20,
+    lastRow: 10, // Updated per request
     isVisible: true
   },
   'Việt_Ads': {
     sheetName: 'Việt_Ads',
     rangeStart: 'A1',
-    rangeEndCol: 'Z',
-    lastRow: 20,
+    rangeEndCol: 'P', // Updated per request
+    lastRow: 12, // Updated per request
     isVisible: true
   },
   '%Hòa_TT': {
     sheetName: '%Hòa_TT',
     rangeStart: 'A1',
     rangeEndCol: 'O',
-    lastRow: 50,
+    lastRow: 32, // Updated per request to ensure coverage
     isVisible: true
   }
 };
 
-export const POLLING_INTERVAL_MS = 30000; // 30 seconds as requested
+export const POLLING_INTERVAL_MS = 30000; // 30 seconds

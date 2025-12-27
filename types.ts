@@ -7,6 +7,11 @@ export interface SheetConfig {
   isVisible?: boolean; // New: Controls visibility of the tab
 }
 
+export interface GridCoordinate {
+  r: number;
+  c: number;
+}
+
 export interface AppMemory {
   sheetUrl: string;
   sheetId: string;
@@ -16,6 +21,7 @@ export interface AppMemory {
   };
   productKnowledgeCache: any[][] | null;
   lastKnowledgeUpdate: number | null;
+  productBlockLocations: GridCoordinate[] | null; // Cache locations of "Giá bán" cells
 }
 
 export enum TabView {

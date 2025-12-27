@@ -11,7 +11,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpenSettings, configs }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Changed default to false (collapsed) for optimized space
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Define base menu items with their associated TabView key
   const baseMenuItems = [
@@ -42,7 +43,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
   ];
 
   // Filter menu items based on config visibility. 
-  // If config doesn't exist, default to visible for safety, or hide. 
   // Given INITIAL_CONFIGS logic, we assume they exist.
   const menuItems = baseMenuItems.filter(item => {
     const config = configs[item.configKey];

@@ -20,7 +20,8 @@ export const getMemory = (): AppMemory => {
       urlHistory: parsed.urlHistory || [DEFAULT_SHEET_URL],
       configs: { ...INITIAL_CONFIGS, ...parsed.configs },
       productKnowledgeCache: parsed.productKnowledgeCache || null,
-      lastKnowledgeUpdate: parsed.lastKnowledgeUpdate || null
+      lastKnowledgeUpdate: parsed.lastKnowledgeUpdate || null,
+      productBlockLocations: parsed.productBlockLocations || null
     };
   }
   return {
@@ -29,7 +30,8 @@ export const getMemory = (): AppMemory => {
     urlHistory: [DEFAULT_SHEET_URL],
     configs: INITIAL_CONFIGS,
     productKnowledgeCache: null,
-    lastKnowledgeUpdate: null
+    lastKnowledgeUpdate: null,
+    productBlockLocations: null
   };
 };
 
