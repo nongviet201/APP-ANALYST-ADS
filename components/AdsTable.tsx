@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AdsTableView } from './AdsTableView';
+import { AdsCardView } from './AdsCardView';
 
 interface AdsTableProps {
   data: any[];
@@ -15,8 +17,6 @@ type SortConfig = {
   key: string;
   direction: 'asc' | 'desc' | null;
 };
-
-const formatValue = (key: string, value: any) => value;
 
 const getCellStyle = (key: string, value: any, isFirstColumn: boolean) => {
   const lowerKey = key.toLowerCase();
@@ -177,100 +177,28 @@ export const AdsTable: React.FC<AdsTableProps> = ({
       <>
         <div ref={tableContainerRef} className={`flex-1 overflow-auto custom-scrollbar bg-slate-50/50 ${viewMode === 'table' ? 'cursor-grab active:cursor-grabbing' : ''}`} onMouseDown={viewMode === 'table' ? onMouseDown : undefined} onMouseLeave={() => setIsDragging(false)} onMouseUp={() => setIsDragging(false)} onMouseMove={viewMode === 'table' ? onMouseMove : undefined}>
             {viewMode === 'table' ? (
-            <table className="w-full text-left border-collapse select-none md:select-auto">
-                <thead className="bg-slate-50 sticky top-0 z-30">
-                <tr>
-                    <th onClick={() => handleSort(accountKey)} className="px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap sticky left-0 z-40 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] pl-5 text-left cursor-pointer hover:bg-slate-100 transition-colors group">
-                        <div className="flex items-center gap-1.5">
-                            {accountKey}
-                            <span className={`transition-opacity ${sortConfig.key === accountKey ? 'opacity-100 text-indigo-500' : 'opacity-0 group-hover:opacity-40'}`}>
-                                {sortConfig.key === accountKey && sortConfig.direction === 'desc' ? '↓' : '↑'}
-                            </span>
-                        </div>
-                    </th>
-                    <th className="px-2 py-3 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 text-center w-10">TT</th>
-                    {campaignNameKey && (
-                    <th onClick={() => handleSort(campaignNameKey)} className="px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap text-center cursor-pointer hover:bg-slate-100 transition-colors group">
-                        <div className="flex items-center justify-center gap-1.5">
-                            {campaignNameKey}
-                            <span className={`transition-opacity ${sortConfig.key === campaignNameKey ? 'opacity-100 text-indigo-500' : 'opacity-0 group-hover:opacity-40'}`}>
-                                {sortConfig.key === campaignNameKey && sortConfig.direction === 'desc' ? '↓' : '↑'}
-                            </span>
-                        </div>
-                    </th>
-                    )}
-                    {restKeys.map(key => (
-                    <th key={key} onClick={() => handleSort(key)} className="px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap text-center cursor-pointer hover:bg-slate-100 transition-colors group">
-                         <div className="flex items-center justify-center gap-1.5">
-                            {key}
-                            <span className={`transition-opacity ${sortConfig.key === key ? 'opacity-100 text-indigo-500' : 'opacity-0 group-hover:opacity-40'}`}>
-                                {sortConfig.key === key && sortConfig.direction === 'desc' ? '↓' : '↑'}
-                            </span>
-                        </div>
-                    </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                {processedData.map((row, idx) => {
-                    const isActive = row[statusKey]?.toString().toLowerCase() === 'active';
-                    const errorText = row[errorKey];
-                    const hasError = errorText && errorText.toString().trim().length > 0;
-                    return (
-                    <tr key={idx} className="hover:bg-indigo-50/40 transition-colors">
-                        <td className={`px-4 py-3 md:px-6 text-xs md:text-sm whitespace-nowrap ${getCellStyle(accountKey, row[accountKey], true)}`}>
-                            <div className="flex flex-col">
-                                <span className={hasError ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'}>{formatValue(accountKey, row[accountKey])}</span>
-                                {hasError && <span className="text-[9px] text-rose-500 italic mt-0.5 max-w-[150px] truncate block">{errorText}</span>}
-                            </div>
-                        </td>
-                        <td className="px-2 py-3 border-b border-slate-100 text-center w-10">
-                            <div className="flex justify-center"><div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]' : 'bg-slate-300'}`}></div></div>
-                        </td>
-                        {campaignNameKey && (
-                            <td className={`px-4 py-3 md:px-6 text-xs md:text-sm whitespace-nowrap ${getCellStyle(campaignNameKey, row[campaignNameKey], false)}`}>{row[campaignNameKey]}</td>
-                        )}
-                        {restKeys.map(k => (
-                        <td key={k} className={`px-4 py-3 md:px-6 text-xs md:text-sm whitespace-nowrap ${getCellStyle(k, row[k], false)}`}>{row[k]}</td>
-                        ))}
-                    </tr>
-                    );
-                })}
-                </tbody>
-            </table>
+              <AdsTableView 
+                data={processedData}
+                keys={keys}
+                accountKey={accountKey}
+                campaignNameKey={campaignNameKey}
+                statusKey={statusKey}
+                errorKey={errorKey}
+                restKeys={restKeys}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                getCellStyle={getCellStyle}
+              />
             ) : (
-            <div className="p-3 md:p-4 space-y-4">
-                {processedData.map((row, rowIdx) => {
-                const isActive = row[statusKey]?.toString().toLowerCase() === 'active';
-                const displayName = campaignNameKey ? row[campaignNameKey] : row[keys[1]]; 
-                const displayId = row[accountKey];
-                const errorText = row[errorKey];
-                const hasError = errorText && errorText.toString().trim().length > 0;
-                return (
-                    <div key={rowIdx} className={`bg-white rounded-2xl border ${hasError ? 'border-rose-100' : 'border-slate-100'} shadow-sm overflow-hidden p-4`}>
-                        <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-2">
-                            <div className="flex flex-col">
-                                <span className={`text-[12px] font-black uppercase tracking-widest ${hasError ? 'text-rose-500' : 'text-emerald-500'}`}>{displayId}</span>
-                                {hasError && <span className="text-[10px] text-rose-500 font-medium italic">{errorText}</span>}
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-300">#{rowIdx + 1}</span>
-                        </div>
-                        <div className="flex items-center gap-2.5 mb-4">
-                            <div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                            <h3 className="text-sm font-bold text-slate-800">{displayName}</h3>
-                        </div>
-                        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                            {restKeys.map(k => (
-                                <div key={k} className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 truncate">{k}</span>
-                                    <span className={`text-xs ${getCellStyle(k, row[k], false)}`}>{row[k]}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-                })}
-            </div>
+              <AdsCardView 
+                data={processedData}
+                accountKey={accountKey}
+                campaignNameKey={campaignNameKey}
+                statusKey={statusKey}
+                errorKey={errorKey}
+                restKeys={restKeys}
+                getCellStyle={getCellStyle}
+              />
             )}
         </div>
         <div className="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center z-30 flex-shrink-0">

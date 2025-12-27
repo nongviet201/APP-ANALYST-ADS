@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { HourlyTableView } from './HourlyTableView';
+import { HourlyCardView } from './HourlyCardView';
 
 interface HourlyTableProps {
   data: any[];
@@ -15,8 +17,6 @@ type SortConfig = {
   key: string;
   direction: 'asc' | 'desc' | null;
 };
-
-const formatValue = (key: string, value: any) => value;
 
 const getCellStyle = (key: string, value: any, isFirstColumn: boolean) => {
   const lowerKey = key.toLowerCase();
@@ -140,7 +140,6 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          {/* Animated Search Bar */}
           <div className={`flex items-center transition-all duration-300 ${isSearchExpanded ? 'w-40 md:w-64 bg-slate-50 ring-1 ring-slate-200' : 'w-10'} rounded-xl overflow-hidden`}>
             <button 
               onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -173,52 +172,19 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
       <>
         <div ref={tableContainerRef} className={`flex-1 overflow-auto custom-scrollbar bg-slate-50/50 ${viewMode === 'table' ? 'cursor-grab active:cursor-grabbing' : ''}`} onMouseDown={viewMode === 'table' ? onMouseDown : undefined} onMouseLeave={() => setIsDragging(false)} onMouseUp={() => setIsDragging(false)} onMouseMove={viewMode === 'table' ? onMouseMove : undefined}>
             {viewMode === 'table' ? (
-            <table className="w-full text-left border-collapse select-none md:select-auto">
-                <thead className="bg-slate-50 sticky top-0 z-30">
-                <tr>
-                    {keys.map((key, idx) => (
-                    <th key={key} onClick={() => handleSort(key)} className={`px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors group ${idx === 0 ? 'sticky left-0 z-40 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] pl-6 text-left' : 'text-center'}`}>
-                        <div className={`flex items-center gap-1.5 ${idx === 0 ? 'justify-start' : 'justify-center'}`}>
-                            {key}
-                            <span className={`transition-opacity ${sortConfig.key === key ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-40'}`}>
-                                {sortConfig.key === key && sortConfig.direction === 'desc' ? '↓' : '↑'}
-                            </span>
-                        </div>
-                    </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                {processedData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
-                    {keys.map((key, colIdx) => (
-                        <td key={key} className={`px-4 py-3 md:px-6 text-xs md:text-sm whitespace-nowrap ${getCellStyle(key, row[key], colIdx === 0)} ${colIdx === 0 ? 'pl-6' : ''}`}>
-                            {formatValue(key, row[key])}
-                        </td>
-                    ))}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+              <HourlyTableView 
+                data={processedData}
+                keys={keys}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                getCellStyle={getCellStyle}
+              />
             ) : (
-            <div className="p-3 md:p-4 space-y-4">
-                {processedData.map((row, idx) => (
-                    <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                        <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
-                            <h3 className="text-base font-bold text-blue-900">{row[keys[0]]}</h3>
-                            <span className="text-[10px] font-bold text-slate-300">#{idx + 1}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                            {keys.slice(1).map(k => (
-                                <div key={k} className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 truncate">{k}</span>
-                                    <span className={`text-sm ${getCellStyle(k, row[k], false)}`}>{row[k]}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+              <HourlyCardView 
+                data={processedData}
+                keys={keys}
+                getCellStyle={getCellStyle}
+              />
             )}
         </div>
         <div className="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center z-30">
