@@ -19,19 +19,21 @@ const getCellStyle = (key: string, value: any, isFirstColumn: boolean) => {
   const lowerKey = key.toLowerCase();
   
   if (isFirstColumn) {
-    return 'font-bold text-blue-900 bg-white sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]';
+    return 'font-bold text-blue-900 bg-white sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] text-left';
   }
+  
+  let baseStyle = 'text-center ';
   
   if ((lowerKey.includes('lợi nhuận') || lowerKey.includes('%') || lowerKey.includes('roi') || lowerKey.includes('chi phí') || lowerKey.includes('doanh thu')) && typeof value === 'string') {
     const num = parseFloat(value.replace(/[^0-9.-]+/g,""));
     if (!isNaN(num)) {
-      if (num < 0) return 'text-rose-600 font-bold tabular-nums';
-      if (lowerKey.includes('lợi nhuận') && num > 0) return 'text-emerald-600 font-bold tabular-nums';
+      if (num < 0) return baseStyle + 'text-rose-600 font-bold tabular-nums';
+      if (lowerKey.includes('lợi nhuận') && num > 0) return baseStyle + 'text-emerald-600 font-bold tabular-nums';
     }
-    return 'text-slate-700 font-semibold tabular-nums';
+    return baseStyle + 'text-slate-700 font-semibold tabular-nums';
   }
   
-  return 'text-slate-600';
+  return baseStyle + 'text-slate-600';
 };
 
 export const HourlyTable: React.FC<HourlyTableProps> = ({ 
@@ -186,7 +188,7 @@ export const HourlyTable: React.FC<HourlyTableProps> = ({
                 <thead className="bg-slate-50 sticky top-0 z-30">
                 <tr>
                     {tableKeys.map((key, idx) => (
-                    <th key={key} className={`px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap ${idx === 0 ? 'sticky left-0 z-40 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] pl-6' : ''}`}>
+                    <th key={key} className={`px-4 py-3 md:px-6 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap ${idx === 0 ? 'sticky left-0 z-40 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] pl-6 text-left' : 'text-center'}`}>
                         {key}
                     </th>
                     ))}

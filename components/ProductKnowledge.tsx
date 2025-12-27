@@ -249,25 +249,25 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
         <table className="w-full text-left border-collapse">
           <thead className="bg-white sticky top-0 z-30 shadow-[0_4px_10px_-4px_rgba(0,0,0,0.05)]">
             <tr>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap sticky left-0 z-40 bg-white pl-6">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap sticky left-0 z-40 bg-white pl-6 text-left">
                 SẢN PHẨM
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center">
                 GIÁ NHẬP
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center">
                 GT ĐƠN TB
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center">
                 SL ĐƠN TB
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center">
                 CP LƯỢT MUA
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center">
                 % HOÀN
               </th>
-              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-right pr-6">
+              <th className="px-4 py-4 text-[10px] md:text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap text-center pr-6">
                 HÒA THỰC TẾ
               </th>
             </tr>
@@ -275,25 +275,25 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
           <tbody className="divide-y divide-slate-50">
             {products.map((prod, idx) => (
               <tr key={idx} className="hover:bg-emerald-50/30 transition-colors group">
-                <td className="px-4 py-4 text-xs md:text-sm font-bold text-slate-800 border-b border-slate-50 whitespace-nowrap sticky left-0 z-20 bg-white group-hover:bg-emerald-50/30 pl-6 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.02)]">
+                <td className="px-4 py-4 text-xs md:text-sm font-bold text-slate-800 border-b border-slate-50 whitespace-nowrap sticky left-0 z-20 bg-white group-hover:bg-emerald-50/30 pl-6 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.02)] text-left">
                   {prod.name}
                 </td>
-                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-right tabular-nums">
+                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-center tabular-nums">
                   {formatCell(prod.importPrice)}
                 </td>
-                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-right tabular-nums">
+                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-center tabular-nums">
                   {formatCell(prod.avgOrderValue)}
                 </td>
-                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-right tabular-nums">
+                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-center tabular-nums">
                   {formatCell(prod.avgQuantity)}
                 </td>
-                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-right tabular-nums bg-yellow-50/50">
+                <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-center tabular-nums bg-yellow-50/50">
                   {formatCell(prod.adsCost)}
                 </td>
-                 <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-right tabular-nums">
+                 <td className="px-4 py-4 text-xs md:text-sm font-medium text-slate-600 border-b border-slate-50 text-center tabular-nums">
                   {formatCell(prod.returnRate)}
                 </td>
-                <td className="px-4 py-4 text-xs md:text-sm font-bold text-emerald-600 border-b border-slate-50 text-right tabular-nums pr-6">
+                <td className="px-4 py-4 text-xs md:text-sm font-bold text-emerald-600 border-b border-slate-50 text-center tabular-nums pr-6">
                   {formatCell(prod.breakEven)}
                 </td>
               </tr>
