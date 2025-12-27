@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TabView, AppMemory, RowData, SheetConfig } from './types';
 import { getMemory, saveMemory, updateSheetConfig, extractSheetId } from './services/storageService';
 import { fetchSheetData, parseTableData } from './services/googleSheetService';
-import { analyzeData } from './services/geminiService';
 import { POLLING_INTERVAL_MS, DEFAULT_SHEET_URL } from './constants';
 // Import specific tables
 import { AdsTable } from './components/AdsTable';
@@ -14,23 +13,31 @@ import { Layout } from './components/Layout';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabView>(TabView.HOURLY);
-  const [memory, setMemory] = useState<AppMemory>(getMemory());
-  const [hourlyData, setHourlyData] = useState<RowData[]>([]);
-  const [adsData, setAdsData] = useState<RowData[]>([]);
+  
+  // Initialize state directly from Memory (Cache-First Strategy)
+  const initialMemory = getMemory();
+  const [memory, setMemory] = useState<AppMemory>(initialMemory);
+  
+  const [hourlyData, setHourlyData] = useState<RowData[]>(initialMemory.hourlyCache || []);
+  const [adsData, setAdsData] = useState<RowData[]>(initialMemory.adsCache || []);
+  
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success'>('idle');
-  const [aiAnalysis, setAiAnalysis] = useState<string>("");
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  // Default to 'success' if we have cached data, otherwise 'idle'
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>(
+    (initialMemory.hourlyCache || initialMemory.adsCache) ? 'success' : 'idle'
+  );
   const [showConfig, setShowConfig] = useState<boolean>(false);
   
-  // Temporary state for editing settings
   const [tempConfigs, setTempConfigs] = useState<{ [key: string]: SheetConfig } | null>(null);
 
   const intervalRef = useRef<any>(null);
 
   // --- Logic Fetch Data ---
   const fetchDataForTab = useCallback(async (tab: TabView, forceExpand = false) => {
-    if (!memory.sheetId) return;
+    if (!memory.sheetId) {
+        setSyncStatus('idle');
+        return;
+    }
     if (tab === TabView.SETTINGS) return;
 
     // Map TabView to config key
@@ -42,27 +49,32 @@ const App: React.FC = () => {
     const config = memory.configs[configName];
     if (!config || config.isVisible === false) return;
     
-    // Only show full-screen loading if we have NO data yet
+    // Check if we have data to decide on showing full loader vs background update
     const hasExistingData = tab === TabView.HOURLY ? hourlyData.length > 0 : (tab === TabView.ADS ? adsData.length > 0 : false);
-    if (!hasExistingData && !forceExpand) setIsUpdating(true);
     
-    setSyncStatus('syncing');
-
+    // Only set 'syncing' visual state if we have NO data. 
+    // If we have data, we stay in 'success' (Green) to avoid flickering.
+    if (!hasExistingData && !forceExpand) {
+        setIsUpdating(true);
+        setSyncStatus('syncing');
+    }
+    
     try {
       const fetchConfig: SheetConfig = forceExpand 
         ? { ...config, lastRow: config.lastRow + 5 } 
         : config;
 
       const rawCsvGrid = await fetchSheetData(memory.sheetId, fetchConfig);
+      const now = Date.now();
       
+      let newMemory = { ...memory };
+
       if (tab === TabView.KNOWLEDGE) {
-        const newMemory = {
-             ...memory,
+        newMemory = {
+             ...newMemory,
              productKnowledgeCache: rawCsvGrid,
-             lastKnowledgeUpdate: Date.now()
+             lastKnowledgeUpdate: now
         };
-        setMemory(newMemory);
-        saveMemory(newMemory);
       } else {
         const parsed = parseTableData(rawCsvGrid);
         
@@ -70,27 +82,38 @@ const App: React.FC = () => {
              const newTotalRows = Math.max(config.lastRow, rawCsvGrid.length);
              if (newTotalRows > config.lastRow) {
                  const newConfigs = updateSheetConfig(configName, { lastRow: newTotalRows });
-                 setMemory(prev => ({ ...prev, configs: newConfigs }));
+                 newMemory.configs = newConfigs;
              }
         }
 
-        if (tab === TabView.HOURLY) setHourlyData(parsed);
-        if (tab === TabView.ADS) setAdsData(parsed);
+        if (tab === TabView.HOURLY) {
+            setHourlyData(parsed);
+            newMemory.hourlyCache = parsed;
+            newMemory.lastHourlyUpdate = now;
+        }
+        if (tab === TabView.ADS) {
+            setAdsData(parsed);
+            newMemory.adsCache = parsed;
+            newMemory.lastAdsUpdate = now;
+        }
       }
       
+      // Save everything to persistent storage
+      setMemory(newMemory);
+      saveMemory(newMemory);
+      
+      // Always set to success (Green) after a good fetch
       setSyncStatus('success');
-      // Briefly show success LED then go back to idle
-      setTimeout(() => setSyncStatus('idle'), 4000);
 
     } catch (error: any) {
       console.error(`Error fetching ${tab}:`, error);
-      setSyncStatus('idle');
+      setSyncStatus('error'); // Only turn Red on error
     } finally {
       setIsUpdating(false);
     }
   }, [memory, hourlyData.length, adsData.length]);
 
-  // --- Startup & Auto-Update every 30s ---
+  // --- Startup & Auto-Update ---
   useEffect(() => {
     // Initial fetch for Knowledge if missing
     if (memory.sheetId && !memory.productKnowledgeCache) {
@@ -98,18 +121,14 @@ const App: React.FC = () => {
     }
   }, [memory.sheetId]); 
 
+  // Trigger fetch when switching tabs
   useEffect(() => {
     if (!memory.sheetId) return;
-
-    // Initial fetch for active tab
     fetchDataForTab(activeTab);
 
-    // Set 30s polling
+    // Set interval for background updates (Silent updates)
     if (intervalRef.current) clearInterval(intervalRef.current);
-    
     intervalRef.current = setInterval(() => {
-      // ONLY POLL if the active tab is NOT Knowledge. 
-      // Knowledge should only update manually or on config change.
       if (activeTab !== TabView.KNOWLEDGE) {
         fetchDataForTab(activeTab);
       }
@@ -118,7 +137,7 @@ const App: React.FC = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [activeTab, fetchDataForTab, memory.sheetId]);
+  }, [activeTab, memory.sheetId, fetchDataForTab]); 
 
   // Initialize temp configs when opening settings
   useEffect(() => {
@@ -129,23 +148,10 @@ const App: React.FC = () => {
 
   // --- Actions ---
   const handleExpandScan = () => fetchDataForTab(activeTab, true);
-  const handleManualRefresh = () => fetchDataForTab(activeTab, false);
-
-  const handleAiAnalyze = async () => {
-    let contextData = activeTab === TabView.HOURLY ? hourlyData : adsData;
-    let contextName = activeTab === TabView.HOURLY ? "Báo Cáo Giờ" : "Việt Ads";
-    
-    if (contextData.length === 0) return;
-
-    setIsAnalyzing(true);
-    try {
-        const result = await analyzeData(contextData, contextName);
-        setAiAnalysis(result);
-    } catch (e) {
-        alert("Lỗi phân tích AI. Kiểm tra API Key.");
-    } finally {
-        setIsAnalyzing(false);
-    }
+  const handleManualRefresh = () => {
+      // For manual refresh, we WANT to show the loading state to give feedback
+      setSyncStatus('syncing'); 
+      fetchDataForTab(activeTab, false);
   };
 
   const handleSaveSettings = (e: React.FormEvent, url: string) => {
@@ -165,20 +171,23 @@ const App: React.FC = () => {
         sheetUrl: url, 
         sheetId: extractedId,
         urlHistory: updatedHistory,
-        configs: tempConfigs || memory.configs
+        configs: tempConfigs || memory.configs,
+        // Reset caches on config change to force refresh
+        hourlyCache: null,
+        adsCache: null,
+        productKnowledgeCache: null
       };
       
       setMemory(newMem);
       saveMemory(newMem);
       setShowConfig(false);
       
-      // Reset current data to force a clean fetch
       setHourlyData([]);
       setAdsData([]);
-      // Force refresh knowledge if config changed
-      if (activeTab === TabView.KNOWLEDGE) {
-         fetchDataForTab(TabView.KNOWLEDGE);
-      }
+      setSyncStatus('idle');
+      
+      // Trigger fetch for current tab
+      setTimeout(() => fetchDataForTab(activeTab), 100);
   };
 
   const handleConfigChange = (key: string, field: keyof SheetConfig, value: any) => {
@@ -190,14 +199,6 @@ const App: React.FC = () => {
         [field]: value
       }
     });
-  };
-
-  const handleRemoveHistoryItem = (e: React.MouseEvent, url: string) => {
-    e.stopPropagation();
-    const updatedHistory = (memory.urlHistory || []).filter(h => h !== url);
-    const newMem = { ...memory, urlHistory: updatedHistory };
-    setMemory(newMem);
-    saveMemory(newMem);
   };
 
   const renderConfigSection = (label: string, configKey: string) => {
@@ -322,45 +323,18 @@ const App: React.FC = () => {
         onOpenSettings={() => setShowConfig(true)}
         configs={memory.configs}
     >
-      <div className="flex flex-col gap-4 h-full pb-10 md:pb-0">
-        
-        {/* AI Analysis Result Panel */}
-        {aiAnalysis && (
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-100 animate-fade-in relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl shadow-sm">🤖</div>
-                        <div>
-                          <h3 className="font-bold text-slate-800 text-lg">AI Phân tích Chiến dịch</h3>
-                          <p className="text-xs text-slate-400 font-medium">Dựa trên dữ liệu {activeTab === TabView.HOURLY ? 'Báo cáo giờ' : 'Việt Ads'}</p>
-                        </div>
-                    </div>
-                    <button 
-                      onClick={() => setAiAnalysis("")} 
-                      className="text-slate-300 hover:text-slate-600 bg-slate-50 p-2 rounded-xl transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                </div>
-                <div className="prose prose-slate max-w-none text-slate-600 whitespace-pre-line leading-relaxed bg-slate-50/50 p-6 rounded-2xl border border-slate-100 text-sm md:text-base italic">
-                    {aiAnalysis}
-                </div>
-            </div>
-        )}
-
-        {/* The Main Unified Table with Integrated Controls */}
-        <div className="flex-1 min-h-[400px]">
+      <div className="flex flex-col h-full">
+        {/* Container: Flex-1 to fill remaining space, h-full to take 100% of parent */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
           {activeTab === TabView.HOURLY && (
             <HourlyTable 
               title="Báo Cáo Giờ" 
               data={hourlyData} 
               isUpdating={isUpdating}
-              isAnalyzing={isAnalyzing}
-              onAnalyze={handleAiAnalyze}
               onExpand={handleExpandScan}
               onRefresh={handleManualRefresh}
               status={syncStatus}
+              lastUpdated={memory.lastHourlyUpdate}
             />
           )}
           
@@ -369,11 +343,10 @@ const App: React.FC = () => {
               title="Việt Ads" 
               data={adsData} 
               isUpdating={isUpdating}
-              isAnalyzing={isAnalyzing}
-              onAnalyze={handleAiAnalyze}
               onExpand={handleExpandScan}
               onRefresh={handleManualRefresh}
               status={syncStatus}
+              lastUpdated={memory.lastAdsUpdate}
             />
           )}
 

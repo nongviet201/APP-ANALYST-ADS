@@ -26,4 +26,4 @@ export const INITIAL_CONFIGS = {
   }
 };
 
-export const POLLING_INTERVAL_MS = 30000; // 30 seconds
+export const POLLING_INTERVAL_MS = 3000; // Updated to 3 seconds for Real-time feel

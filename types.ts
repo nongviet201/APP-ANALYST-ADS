@@ -22,6 +22,12 @@ export interface AppMemory {
   productKnowledgeCache: any[][] | null;
   lastKnowledgeUpdate: number | null;
   productBlockLocations: GridCoordinate[] | null; // Cache locations of "Giá bán" cells
+  
+  // Cache for Hourly and Ads data
+  hourlyCache: RowData[] | null;
+  lastHourlyUpdate: number | null;
+  adsCache: RowData[] | null;
+  lastAdsUpdate: number | null;
 }
 
 export enum TabView {

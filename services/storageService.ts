@@ -21,7 +21,11 @@ export const getMemory = (): AppMemory => {
       configs: { ...INITIAL_CONFIGS, ...parsed.configs },
       productKnowledgeCache: parsed.productKnowledgeCache || null,
       lastKnowledgeUpdate: parsed.lastKnowledgeUpdate || null,
-      productBlockLocations: parsed.productBlockLocations || null
+      productBlockLocations: parsed.productBlockLocations || null,
+      hourlyCache: parsed.hourlyCache || null,
+      lastHourlyUpdate: parsed.lastHourlyUpdate || null,
+      adsCache: parsed.adsCache || null,
+      lastAdsUpdate: parsed.lastAdsUpdate || null
     };
   }
   return {
@@ -31,7 +35,11 @@ export const getMemory = (): AppMemory => {
     configs: INITIAL_CONFIGS,
     productKnowledgeCache: null,
     lastKnowledgeUpdate: null,
-    productBlockLocations: null
+    productBlockLocations: null,
+    hourlyCache: null,
+    lastHourlyUpdate: null,
+    adsCache: null,
+    lastAdsUpdate: null
   };
 };
 

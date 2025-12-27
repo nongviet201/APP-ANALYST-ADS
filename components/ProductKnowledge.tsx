@@ -44,6 +44,22 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
       return null;
     };
 
+    // Helper to process Values that are divided by 1000 in Sheet (Import Price, Ads Cost)
+    const processSheetValueX1000 = (val: string | undefined): string => {
+        if (!val) return '-';
+        // Clean string (keep numbers, dots, comma, hyphen)
+        const cleanVal = val.toString().trim();
+        // Replace comma with dot for standard JS parsing if needed
+        const numStr = cleanVal.replace(/,/g, '.');
+        const num = parseFloat(numStr);
+        
+        if (!isNaN(num)) {
+            // Multiply by 1000 and format back
+            return (num * 1000).toLocaleString('vi-VN');
+        }
+        return val;
+    };
+
     // Helper to find name intelligently around the expected location
     const findName = (r: number, c: number) => {
         // Standard headers to ignore (Lowercased)
@@ -54,24 +70,12 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
         ];
         
         // Strategy: Scan upwards from the anchor "Giá bán"
-        // We look at row offsets -2, -3, -4 (most likely locations)
-        // We also check lateral columns (left/right) because merged cells might anchor differently
-        
-        // Priority order:
-        // 1. [r-2, c]   (Standard)
-        // 2. [r-2, c-1] (Merged Left)
-        // 3. [r-2, c+1] (Merged Right)
-        // 4. [r-3, c]   (Header shift)
-        // 5. [r-3, c-1]
-        // 6. [r-3, c+1]
-        // 7. [r-4, ...], [r-5, ...]
-        
         const scanPatterns = [
             {r: -2, c: 0}, {r: -2, c: -1}, {r: -2, c: 1}, {r: -2, c: -2},
             {r: -3, c: 0}, {r: -3, c: -1}, {r: -3, c: 1},
             {r: -4, c: 0}, {r: -4, c: -1}, {r: -4, c: 1},
             {r: -5, c: 0},
-            {r: -1, c: 0} // Last resort: maybe it's right above?
+            {r: -1, c: 0} 
         ];
 
         for (const pattern of scanPatterns) {
@@ -83,35 +87,23 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
                 const strVal = cellVal.toString().trim();
                 if (strVal.length > 0) {
                      const lowerVal = strVal.toLowerCase();
-                     
-                     // Check if it's a number (prices usually aren't names)
                      const isNumber = !isNaN(parseFloat(strVal.replace(/,/g, '').replace(/\./g, ''))) && isFinite(Number(strVal.replace(/,/g, '').replace(/\./g, '')));
                      
-                     // Heuristic: Names are usually not just numbers, and not in ignored list
                      if (!ignoredValues.includes(lowerVal) && !strVal.includes('%')) {
-                         // If it's a pure number, be skeptical, but if it's the only thing we found...
-                         // Let's filter out pure small numbers which might be noise
                          if (isNumber && strVal.length < 3) continue; 
-                         
-                         // FIX: Clean up "Danh mục" from the name if it exists inside the cell
-                         // This handles cases like "KẸO TRỨNG MUỐI Danh mục"
                          const cleanName = strVal.replace(/danh mục/gi, "").trim();
-
                          if (cleanName.length === 0) continue;
-
                          return cleanName;
                      }
                 }
             }
         }
-
         return "Unknown Product";
     };
 
     // Helper to extract a single product based on the "Giá bán" anchor coordinates {r, c}
     const extractAt = (r: number, c: number): ProductData | null => {
         try {
-            // Anchor verification
             const anchor = getCell(r, c)?.toString().trim().toLowerCase();
             if (anchor !== 'giá bán') return null;
 
@@ -119,11 +111,14 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
                 name: findName(r, c),
                 avgOrderValue: getCell(r, c + 2)?.toString() || '-',
                 
-                importPrice: getCell(r + 1, c + 1)?.toString() || '-',
-                avgQuantity: getCell(r + 1, c + 2)?.toString() || '-',
+                // Process Import Price (x1000)
+                importPrice: processSheetValueX1000(getCell(r + 1, c + 1)?.toString()),
                 
+                avgQuantity: getCell(r + 1, c + 2)?.toString() || '-',
                 breakEven: getCell(r + 2, c + 1)?.toString() || '-',
-                adsCost: getCell(r + 2, c + 2)?.toString() || '-',
+                
+                // Process Ads Cost (x1000)
+                adsCost: processSheetValueX1000(getCell(r + 2, c + 2)?.toString()),
                 
                 returnRate: getCell(r + 3, c + 1)?.toString() || '-',
             };
@@ -165,7 +160,6 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
             if (!data[r]) continue;
             for (let c = 0; c < data[r].length; c++) {
                 const cellVal = data[r][c]?.toString().trim().toLowerCase();
-                
                 if (cellVal === 'giá bán') {
                     const p = extractAt(r, c);
                     if (p) {
@@ -185,10 +179,8 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
                 });
             }
         }
-        
         return scannedProducts;
     }
-
     return [];
   }, [data]);
 
