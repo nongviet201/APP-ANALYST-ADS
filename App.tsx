@@ -4,7 +4,6 @@ import { TabView, AppMemory, RowData, SheetConfig } from './types';
 import { getMemory, saveMemory, updateSheetConfig, extractSheetId } from './services/storageService';
 import { fetchSheetData, parseTableData } from './services/googleSheetService';
 import { POLLING_INTERVAL_MS, DEFAULT_SHEET_URL } from './constants';
-// Import specific tables
 import { AdsTable } from './components/AdsTable';
 import { HourlyTable } from './components/HourlyTable';
 import { ProductKnowledge } from './components/ProductKnowledge';
@@ -14,7 +13,6 @@ import { Layout } from './components/Layout';
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabView>(TabView.HOURLY);
   
-  // Initialize state directly from Memory (Cache-First Strategy)
   const initialMemory = getMemory();
   const [memory, setMemory] = useState<AppMemory>(initialMemory);
   
@@ -22,7 +20,6 @@ const App: React.FC = () => {
   const [adsData, setAdsData] = useState<RowData[]>(initialMemory.adsCache || []);
   
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  // Default to 'success' if we have cached data, otherwise 'idle'
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>(
     (initialMemory.hourlyCache || initialMemory.adsCache) ? 'success' : 'idle'
   );
@@ -32,7 +29,6 @@ const App: React.FC = () => {
 
   const intervalRef = useRef<any>(null);
 
-  // --- Logic Fetch Data ---
   const fetchDataForTab = useCallback(async (tab: TabView, forceExpand = false) => {
     if (!memory.sheetId) {
         setSyncStatus('idle');
@@ -40,7 +36,6 @@ const App: React.FC = () => {
     }
     if (tab === TabView.SETTINGS) return;
 
-    // Map TabView to config key
     let configName = '';
     if (tab === TabView.HOURLY) configName = 'BC_GIỜ';
     if (tab === TabView.ADS) configName = 'Việt_Ads';
@@ -49,11 +44,8 @@ const App: React.FC = () => {
     const config = memory.configs[configName];
     if (!config || config.isVisible === false) return;
     
-    // Check if we have data to decide on showing full loader vs background update
     const hasExistingData = tab === TabView.HOURLY ? hourlyData.length > 0 : (tab === TabView.ADS ? adsData.length > 0 : false);
     
-    // Only set 'syncing' visual state if we have NO data. 
-    // If we have data, we stay in 'success' (Green) to avoid flickering.
     if (!hasExistingData && !forceExpand) {
         setIsUpdating(true);
         setSyncStatus('syncing');
@@ -98,35 +90,28 @@ const App: React.FC = () => {
         }
       }
       
-      // Save everything to persistent storage
       setMemory(newMemory);
       saveMemory(newMemory);
-      
-      // Always set to success (Green) after a good fetch
       setSyncStatus('success');
 
     } catch (error: any) {
       console.error(`Error fetching ${tab}:`, error);
-      setSyncStatus('error'); // Only turn Red on error
+      setSyncStatus('error');
     } finally {
       setIsUpdating(false);
     }
   }, [memory, hourlyData.length, adsData.length]);
 
-  // --- Startup & Auto-Update ---
   useEffect(() => {
-    // Initial fetch for Knowledge if missing
     if (memory.sheetId && !memory.productKnowledgeCache) {
       fetchDataForTab(TabView.KNOWLEDGE);
     }
   }, [memory.sheetId]); 
 
-  // Trigger fetch when switching tabs
   useEffect(() => {
     if (!memory.sheetId) return;
     fetchDataForTab(activeTab);
 
-    // Set interval for background updates (Silent updates)
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       if (activeTab !== TabView.KNOWLEDGE) {
@@ -139,17 +124,14 @@ const App: React.FC = () => {
     };
   }, [activeTab, memory.sheetId, fetchDataForTab]); 
 
-  // Initialize temp configs when opening settings
   useEffect(() => {
     if (showConfig) {
       setTempConfigs(JSON.parse(JSON.stringify(memory.configs)));
     }
   }, [showConfig, memory.configs]);
 
-  // --- Actions ---
   const handleExpandScan = () => fetchDataForTab(activeTab, true);
   const handleManualRefresh = () => {
-      // For manual refresh, we WANT to show the loading state to give feedback
       setSyncStatus('syncing'); 
       fetchDataForTab(activeTab, false);
   };
@@ -162,7 +144,6 @@ const App: React.FC = () => {
           return;
       }
       
-      // Update history
       const currentHistory = memory.urlHistory || [];
       const updatedHistory = [url, ...currentHistory.filter(h => h !== url)].slice(0, 5);
 
@@ -172,7 +153,6 @@ const App: React.FC = () => {
         sheetId: extractedId,
         urlHistory: updatedHistory,
         configs: tempConfigs || memory.configs,
-        // Reset caches on config change to force refresh
         hourlyCache: null,
         adsCache: null,
         productKnowledgeCache: null
@@ -186,7 +166,6 @@ const App: React.FC = () => {
       setAdsData([]);
       setSyncStatus('idle');
       
-      // Trigger fetch for current tab
       setTimeout(() => fetchDataForTab(activeTab), 100);
   };
 
@@ -259,7 +238,6 @@ const App: React.FC = () => {
     );
   };
 
-  // --- Render Configuration ---
   if (!memory.sheetId || showConfig) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans text-slate-900">
@@ -289,7 +267,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Sheet Tabs Configuration */}
             <div className="space-y-4">
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">Cấu hình Trang tính</h2>
               {renderConfigSection('Module: Báo Cáo Giờ', 'BC_GIỜ')}
@@ -315,7 +292,6 @@ const App: React.FC = () => {
     );
   }
 
-  // --- Render Dashboard ---
   return (
     <Layout 
         activeTab={activeTab} 
@@ -323,9 +299,7 @@ const App: React.FC = () => {
         onOpenSettings={() => setShowConfig(true)}
         configs={memory.configs}
     >
-      <div className="flex flex-col h-full">
-        {/* Container: Flex-1 to fill remaining space, h-full to take 100% of parent */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-h-0">
           {activeTab === TabView.HOURLY && (
             <HourlyTable 
               title="Báo Cáo Giờ" 
@@ -357,7 +331,6 @@ const App: React.FC = () => {
               onRefresh={() => fetchDataForTab(TabView.KNOWLEDGE, false)}
             />
           )}
-        </div>
       </div>
     </Layout>
   );

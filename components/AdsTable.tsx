@@ -132,8 +132,8 @@ export const AdsTable: React.FC<AdsTableProps> = ({
   const displayTime = status === 'error' && lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : currentTime.toLocaleTimeString();
 
   return (
-    <div className={`flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 ${isOpen ? 'h-full flex-1' : 'h-auto'}`}>
-      <div onClick={() => setIsOpen(!isOpen)} className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-40 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors select-none">
+    <div className={`flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 min-h-0 ${isOpen ? 'flex-1' : 'h-auto'}`}>
+      <div onClick={() => setIsOpen(!isOpen)} className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-40 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors select-none flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className={`w-2.5 h-2.5 rounded-full ${status === 'error' ? 'bg-rose-500' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}></div>
           <div className="flex flex-col">
@@ -145,7 +145,6 @@ export const AdsTable: React.FC<AdsTableProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          {/* Animated Search Bar */}
           <div className={`flex items-center transition-all duration-300 ${isSearchExpanded ? 'w-40 md:w-64 bg-slate-50 ring-1 ring-slate-200' : 'w-10'} rounded-xl overflow-hidden`}>
             <button 
               onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -274,7 +273,7 @@ export const AdsTable: React.FC<AdsTableProps> = ({
             </div>
             )}
         </div>
-        <div className="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center z-30">
+        <div className="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center z-30 flex-shrink-0">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{processedData.length} RECORDS</span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">REALTIME MODE</span>
         </div>

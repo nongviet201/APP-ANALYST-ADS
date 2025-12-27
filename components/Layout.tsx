@@ -11,10 +11,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpenSettings, configs }) => {
-  // Changed default to false (collapsed) for optimized space
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Define base menu items with their associated TabView key
   const baseMenuItems = [
     { 
       id: TabView.HOURLY, 
@@ -42,8 +40,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
     },
   ];
 
-  // Filter menu items based on config visibility. 
-  // Given INITIAL_CONFIGS logic, we assume they exist.
   const menuItems = baseMenuItems.filter(item => {
     const config = configs[item.configKey];
     return config && config.isVisible !== false;
@@ -51,9 +47,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
   return (
     <div className="flex h-screen bg-[#F8F9FC] overflow-hidden font-sans">
-      {/* Sidebar (Desktop/Tablet) */}
       <aside 
-        className={`hidden md:flex flex-col bg-white border-r border-slate-200 z-10 transition-all duration-300 ease-in-out ${
+        className={`hidden md:flex flex-col bg-white border-r border-slate-200 z-50 transition-all duration-300 ease-in-out ${
           isSidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
@@ -98,7 +93,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
                 </span>
                 {isSidebarOpen && <span className="whitespace-nowrap animate-fade-in">{item.label}</span>}
                 
-                {/* Active Indicator Bar for Collapsed State */}
                 {!isSidebarOpen && isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 rounded-r-full"></div>
                 )}
@@ -113,13 +107,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             className={`flex items-center ${isSidebarOpen ? 'justify-start gap-3 px-4' : 'justify-center'} py-3 w-full rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-all`}
             title="Cấu hình"
           >
-            <svg className="w-5 h-5 text-slate-400 group-hover:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
-            {isSidebarOpen && <span className="animate-fade-in">Settings</span>}
+            <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
+            {isSidebarOpen && <span className="animate-fade-in ml-3">Settings</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <header className="md:hidden bg-white border-b border-slate-200 px-4 h-14 flex items-center justify-between z-30 shadow-sm">
           <div className="flex items-center gap-2">
@@ -131,13 +124,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
           </button>
         </header>
 
-        <main className="flex-1 overflow-auto p-2 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto h-full flex flex-col">
+        <main className="flex-1 overflow-hidden p-2 md:p-4 lg:p-5">
+          <div className="w-full h-full flex flex-col">
              {children}
           </div>
         </main>
 
-        {/* Bottom Nav (Mobile Only) */}
         <nav className="md:hidden bg-white border-t border-slate-100 flex justify-around p-2 pb-safe shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.03)] z-40">
            {menuItems.map((item) => (
             <button
