@@ -14,8 +14,14 @@ interface AdsCardViewProps {
 export const AdsCardView: React.FC<AdsCardViewProps> = ({
   data, accountKey, campaignNameKey, statusKey, errorKey, restKeys, getCellStyle
 }) => {
+
+  const handleCopyId = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+  };
+
   return (
-    <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 pb-20">
+    <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 pb-20 select-none">
       {data.map((row, rowIdx) => {
         const isActive = row[statusKey]?.toString().toLowerCase() === 'active';
         const campaignName = campaignNameKey ? row[campaignNameKey] : '';
@@ -50,41 +56,46 @@ export const AdsCardView: React.FC<AdsCardViewProps> = ({
             </div>
             
             {/* Header Compact: Account - Campaign Status (Căn trái) */}
-            <div className="px-4 pt-4 pb-2 flex flex-col items-start text-left">
-                {/* Dòng 1: Tên TK - Tên CD - Dot (Inline layout) */}
-                <div className="flex flex-wrap items-center justify-start gap-1.5 leading-tight w-full pr-8">
+            <div className="px-4 pt-4 pb-2 flex flex-col items-start text-left w-full">
+                {/* Dòng 1: Tên TK | Tên CD | Dot (Horizontal & Single Line) */}
+                <div className="flex items-center justify-start gap-2 w-full pr-8">
                     {/* Account Name */}
-                    <span className={`text-[13px] font-black uppercase whitespace-nowrap ${accountColorClass}`}>
+                    <span className={`text-[13px] font-black uppercase whitespace-nowrap flex-shrink-0 ${accountColorClass}`}>
                         {accountName}
                     </span>
                     
                     {/* Separator */}
-                    {campaignName && <span className="text-slate-300 text-[10px]">•</span>}
+                    <span className="text-slate-300 text-[10px] flex-shrink-0">|</span>
                     
-                    {/* Campaign Name */}
-                    {campaignName && (
-                        <span className="text-[13px] font-bold text-slate-800 break-words">
-                            {campaignName}
-                        </span>
-                    )}
+                    {/* Campaign Name - Truncate to keep single line */}
+                    <span className="text-[13px] font-bold text-slate-800 truncate flex-1 min-w-0" title={campaignName}>
+                        {campaignName || '-'}
+                    </span>
 
-                    {/* Status Dot (Sau cùng) - Neon Effect & Bigger 
-                        Update: Removed mt-0.5 for vertical centering, added ml-1.5 for spacing 
-                    */}
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ml-1.5 ${isActive ? 'bg-emerald-400 shadow-[0_0_8px_1px_rgba(52,211,153,0.8)]' : (hasError ? 'bg-rose-500' : 'bg-slate-300')}`}></div>
+                    {/* Status Dot */}
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-400 shadow-[0_0_8px_1px_rgba(52,211,153,0.8)]' : (hasError ? 'bg-rose-500' : 'bg-slate-300')}`}></div>
                 </div>
 
-                {/* Dòng 2: ID hoặc Lỗi (Text Only - No Background) */}
-                <div className="mt-0.5 min-h-[14px]">
+                {/* Dòng 2: ID hoặc Lỗi (Text Only) */}
+                <div className="mt-0.5 min-h-[14px] w-full">
                     {hasError ? (
-                        <span className="text-[10px] text-rose-500 font-medium italic">
+                        <span className="text-[10px] text-rose-500 font-medium italic block truncate">
                             {errorText}
                         </span>
                     ) : (
                         idCampaignValue && (
-                            <span className="text-[10px] text-slate-400 font-mono tracking-tight">
-                                {idCampaignValue}
-                            </span>
+                            <div 
+                                onClick={(e) => handleCopyId(e, idCampaignValue)}
+                                className="group/id flex items-center gap-1.5 w-fit cursor-copy hover:bg-slate-50 rounded px-1 -ml-1 py-0.5 transition-all active:scale-95 active:bg-indigo-50"
+                                title="Click để sao chép ID"
+                            >
+                                <span className="text-[10px] text-slate-400 font-mono tracking-tight group-hover/id:text-indigo-600 group-hover/id:font-bold transition-colors truncate">
+                                    {idCampaignValue}
+                                </span>
+                                <svg className="w-2.5 h-2.5 text-indigo-400 opacity-0 group-hover/id:opacity-100 transition-opacity flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </div>
                         )
                     )}
                 </div>

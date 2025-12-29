@@ -42,7 +42,7 @@ export const HourlyCardView: React.FC<HourlyCardViewProps> = ({
   };
 
   return (
-    <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-20">
+    <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-20 select-none">
       {data.map((row, idx) => (
         <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full active:scale-[0.99] transition-transform duration-200">
           

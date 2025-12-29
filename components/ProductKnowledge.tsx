@@ -142,10 +142,10 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
       </span>
   );
 
-  if (!data) return <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center h-full flex items-center justify-center shadow-sm">Đang tải Kho Sản Phẩm...</div>;
+  if (!data) return <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center h-full flex items-center justify-center shadow-sm select-none">Đang tải Kho Sản Phẩm...</div>;
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-emerald-400 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-emerald-400 shadow-sm overflow-hidden select-none">
       <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <div className={`w-2.5 h-2.5 rounded-full ${lastUpdated ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
@@ -192,7 +192,7 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
 
       <div className="flex-1 overflow-auto custom-scrollbar bg-white">
         {viewMode === 'table' ? (
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse select-none">
           <thead className="bg-white sticky top-0 z-30 shadow-[0_4px_10px_-4px_rgba(0,0,0,0.05)]">
             <tr>
               <th onClick={() => handleSort('name')} className="px-4 py-4 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider border-b border-emerald-100 whitespace-nowrap sticky left-0 z-40 bg-white pl-6 text-left cursor-pointer group hover:bg-slate-50 transition-colors">
@@ -233,7 +233,7 @@ export const ProductKnowledge: React.FC<ProductKnowledgeProps> = ({ data, onRefr
           </tbody>
         </table>
         ) : (
-          <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20">
+          <div className="p-3 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20 select-none">
              {processedProducts.map((p, idx) => (
                 <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full relative">
                     

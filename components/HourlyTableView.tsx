@@ -13,7 +13,7 @@ export const HourlyTableView: React.FC<HourlyTableViewProps> = ({
   data, keys, sortConfig, onSort, getCellStyle
 }) => {
   return (
-    <table className="w-full text-left border-collapse select-none md:select-auto">
+    <table className="w-full text-left border-collapse select-none">
       <thead className="bg-slate-50 sticky top-0 z-30">
         <tr>
           {keys.map((key, idx) => (
